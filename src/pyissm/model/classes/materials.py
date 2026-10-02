@@ -179,15 +179,15 @@ class ice(class_registry.manage_state):
             class_utils._check_field(md, fieldname = 'materials.rheology_law', values = ['None', 'BuddJacka', 'Cuffey', 'CuffeyTemperate', 'Paterson', 'Arrhenius', 'LliboutryDuval', 'NyeCO2', 'NyeH2O'])
             class_utils._check_field(md, fieldname = 'materials.effectiveconductivity_averaging', scalar = True, values = [0, 1, 2])
 
-        if self.rheology_law == 'Arrhenius':
-            class_utils._check_field(md, fieldname = 'materials.arrhenius_Aminus', gt = 0)
-            class_utils._check_field(md, fieldname = 'materials.arrhenius_Aplus', gt = 0)
-            class_utils._check_field(md, fieldname = 'materials.arrhenius_Qminus', gt = 0)
-            class_utils._check_field(md, fieldname = 'materials.arrhenius_Qplus', gt = 0)
-            class_utils._check_field(md, fieldname = 'materials.arrhenius_Tref', gt = 0)
+            if self.rheology_law.lower() == 'arrhenius':
+                class_utils._check_field(md, fieldname = 'materials.arrhenius_Aminus', gt = 0)
+                class_utils._check_field(md, fieldname = 'materials.arrhenius_Aplus', gt = 0)
+                class_utils._check_field(md, fieldname = 'materials.arrhenius_Qminus', gt = 0)
+                class_utils._check_field(md, fieldname = 'materials.arrhenius_Qplus', gt = 0)
+                class_utils._check_field(md, fieldname = 'materials.arrhenius_Tref', gt = 0)
 
-            if self.materials.arrhenius_Tref < 0:
-                raise Exception('Error: ''arrhenius_Tref'' should be above 0 because its unit is Kelvin, not Celcius degree.')
+                if self.arrhenius_Tref < 0:
+                    raise Exception('Error: ''arrhenius_Tref'' should be above 0 because its unit is Kelvin, not Celcius degree.')
             
         return md
     
