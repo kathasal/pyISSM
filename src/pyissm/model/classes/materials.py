@@ -92,8 +92,13 @@ class ice(class_registry.manage_state):
         self.rheology_B = 2.1 * 1e8
         self.rheology_n = 3.
         self.earth_density = 5512.
-
-        # Inherit matching fields from provided class
+        self.arrhenius_Aminus = 3.61e-13  # Pa^{-n} s^{-1}
+        self.arrhenius_Aplus  = 1.73e+3   # Pa^{-n} s^{-1}
+        self.arrhenius_Qminus = 6.e+4     # J mol-1
+        self.arrhenius_Qplus  = 13.9e+4   # J mol-1
+        self.arrhenius_Tref   = 263.15    # K
+    
+    # Inherit matching fields from provided class
         super().__init__(other)
 
     # Define repr
@@ -115,6 +120,17 @@ class ice(class_registry.manage_state):
         s += '{}\n'.format(class_utils._field_display(self, 'rheology_B', 'flow law parameter [Pa s^(1/n)]'))
         s += '{}\n'.format(class_utils._field_display(self, 'rheology_n', 'Glen\'s flow law exponent'))
         s += '{}\n'.format(class_utils._field_display(self, 'rheology_law', 'law for the temperature dependance of the rheology: \'None\', \'BuddJacka\', \'Cuffey\', \'CuffeyTemperate\', \'Paterson\', \'Arrhenius\', \'LliboutryDuval\', \'NyeCO2\', or \'NyeH2O\''))
+        
+        if self.rheology_law == 'Arrhenius':
+            s +=  '\n    Arrhenius law: \n'
+            s +=  '    A = Aminus * exp(-Qminus/(R*Tstar)), if Tstar < Tref\n'
+            s +=  '      = Aplus  * exp(-Qplus/(R*Tstar)),  if Tstar >= Tref \n'
+            s += '{}\n'.format(class_utils._field_display(self, 'arrhenius_Aminus','prefactor in minus part in Arrhenius law [1/Pa^{n}/s]'))
+            s += '{}\n'.format(class_utils._field_display(self, 'arrhenius_Aplus','prefactor in plus part in Arrhenius law [1/Pa^{n}/s]'))
+            s += '{}\n'.format(class_utils._field_display(self, 'arrhenius_Qminus','activation energy in minus part in Arrhenius law [J/mol]'))
+            s += '{}\n'.format(class_utils._field_display(self, 'arrhenius_Qplus','activation energy in plus part in Arrhenius law [J/mol]'))
+            s += '{}\n'.format(class_utils._field_display(self, 'arrhenius_Tref','reference temperature in Arrhenius law [K]'))
+
         return s
 
     # Define class string
@@ -163,6 +179,16 @@ class ice(class_registry.manage_state):
             class_utils._check_field(md, fieldname = 'materials.rheology_law', values = ['None', 'BuddJacka', 'Cuffey', 'CuffeyTemperate', 'Paterson', 'Arrhenius', 'LliboutryDuval', 'NyeCO2', 'NyeH2O'])
             class_utils._check_field(md, fieldname = 'materials.effectiveconductivity_averaging', scalar = True, values = [0, 1, 2])
 
+        if self.rheology_law == 'Arrhenius':
+            class_utils._check_field(md, fieldname = 'materials.arrhenius_Aminus', gt = 0)
+            class_utils._check_field(md, fieldname = 'materials.arrhenius_Aplus', gt = 0)
+            class_utils._check_field(md, fieldname = 'materials.arrhenius_Qminus', gt = 0)
+            class_utils._check_field(md, fieldname = 'materials.arrhenius_Qplus', gt = 0)
+            class_utils._check_field(md, fieldname = 'materials.arrhenius_Tref', gt = 0)
+
+            if self.materials.arrhenius_Tref < 0:
+                raise Exception('Error: ''arrhenius_Tref'' should be above 0 because its unit is Kelvin, not Celcius degree.')
+            
         return md
     
     # Marshall method for saving the materials.ice parameters
@@ -191,7 +217,8 @@ class ice(class_registry.manage_state):
         ## Write Double fields
         fieldnames = ['rho_ice', 'rho_water', 'rho_freshwater', 'mu_water', 'heatcapacity',
                       'latentheat', 'thermalconductivity', 'temperateiceconductivity', 'meltingpoint', 'beta',
-                      'mixed_layer_capacity', 'thermal_exchange_velocity', 'earth_density']
+                      'mixed_layer_capacity', 'thermal_exchange_velocity', 'earth_density', 
+                      'arrhenius_Aminus', 'arrhenius_Aplus', 'arrhenius_Qminus', 'arrhenius_Qplus', 'arrhenius_Tref']
         for fieldname in fieldnames:
             execute._write_model_field(fid, prefix, obj = self, fieldname = fieldname, format = 'Double')
 
